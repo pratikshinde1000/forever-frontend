@@ -1,8 +1,10 @@
 import { createContext, useEffect, useState } from "react";
-// import { products } from "../assets/assets";
-import axios from 'axios';
+import { getRequest, postRequest } from "../services/apiServices";
+
 import { toast } from "react-toastify";
 import { useNavigate } from 'react-router-dom';
+import { jwtDecode } from "jwt-decode";
+
 export const ShopContext = createContext({
   products: [],
   currency: "₹",
@@ -41,22 +43,48 @@ const ShopContextProvider = (props) => {
     fetchProducts();
   }, [])
 
+  const isTokenExpired = (accessToken) => {
+    const decodedToken = jwtDecode(accessToken);
+    const currentTime = Date.now() / 1000;
+    const check =  decodedToken.exp < currentTime;
+    if(!check){
+      return false;
+    }else{
+      setToken(storedToken);
+      return true;
+    }
+  }
+
   const getToken = () => {
     if (token) {
-      return token;
+      const expiry = isTokenExpired(token);
+      if(expiry){
+        localStorage.removeItem('token');
+        setToken('');
+        navigate('/login')
+      }
     } else if (!token && localStorage.getItem('token')) {
       const storedToken = localStorage.getItem('token');
-      setToken(storedToken);
-      return storedToken;
+      const expiry = isTokenExpired(storedToken);
+      if(expiry){
+        localStorage.removeItem('token');
+        setToken('');
+        navigate('/login')
+      }else{
+        setToken(storedToken);
+        return storedToken;
+      }
     }
   }
 
   const fetchProducts = async () => {
     try {
-      const response = await axios.get(`${backendUrl}/api/product/get`);
+      const response = await getRequest(`${backendUrl}/api/product/get`);
       setProducts(response?.data?.data);
       const token = getToken();
-      getCartProduct({ headers: { token } });
+      // console.log('token', token);
+      if(token)
+        getCartProduct({ headers: { token } });
     } catch (error) {
       toast.error(error?.response?.data?.error || 'Internal Server Error');
     }
@@ -64,7 +92,7 @@ const ShopContextProvider = (props) => {
 
   const getCartProduct = async (headers) => {
     try {
-      const response = await axios.get(`${backendUrl}/api/cart/get`, headers);
+      const response = await getRequest(`${backendUrl}/api/cart/get`, headers);
       if (response.data.data) {
         const cartData = response?.data?.data || [];
         console.log('cartData', cartData)
@@ -87,8 +115,7 @@ const ShopContextProvider = (props) => {
 
   const updateCartProducts = async (cartData, headers) => {
     try {
-      const response = await axios.post(`${backendUrl}/api/cart/update`, { cartData }, headers);
-      console.log('response', response?.data);
+      await postRequest(`${backendUrl}/api/cart/update`, { cartData }, headers);
     } catch (error) {
       console.log('error', error);
     }
@@ -127,7 +154,7 @@ const ShopContextProvider = (props) => {
   }
 
   const removeCartProduct = (index) => {
-    console.log('cart Index', index);
+    // console.log('cart Index', index);
     const cloneCart = structuredClone(cartProducts)
     toast.success('Product removed from cart');
     cloneCart.splice(index, 1);
@@ -152,10 +179,6 @@ const ShopContextProvider = (props) => {
     return totalCount;
   }
 
-  useEffect(() => {
-    console.log('cartProduct', cartProducts);
-    console.log(getCartTotal());
-  }, [cartProducts])
 
   const value = {
     products: products,

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
-import axios from 'axios';
+// import axios from 'axios';
 import { ShopContext } from '../context/ShopContext';
 import { useContext } from 'react';
 import { useEffect } from 'react';
+import {  postRequest } from '../services/apiServices';
 const Login = () => {
 
   const { navigate, backendUrl, token, setToken } = useContext(ShopContext);
@@ -39,7 +40,7 @@ const Login = () => {
 
       if (currentState === 'Sign Up') {
 
-        const response = await axios.post(`${backendUrl}/api/user/register`, { ...data, name });
+        const response = await postRequest(`${backendUrl}/api/user/register`, { ...data, name });
         console.log('response', response?.data);
         if (response?.data?.success) {
           toast.success('User registed.');
@@ -51,7 +52,7 @@ const Login = () => {
 
       } else {
 
-        const response = await axios.post(`${backendUrl}/api/user/login`, data);
+        const response = await postRequest(`${backendUrl}/api/user/login`, data);
         console.log('response', response?.data);
         if (response?.data?.success) {
           toast.success('Logged In Successful');

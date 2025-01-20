@@ -1,8 +1,9 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { ShopContext } from '../context/ShopContext';
 import Title from '../components/Title';
-import axios from 'axios';
+// import axios from 'axios';
 import { assets } from '../assets/assets';
+import { getRequest } from '../services/apiServices';
 const Orders = () => {
 
   const { backendUrl, token, currency } = useContext(ShopContext);
@@ -17,18 +18,17 @@ const Orders = () => {
 
   const getOrders = async () => {
     try {
-      const response = await axios.get(`${backendUrl}/api/order/list`, { headers: { token } });
-      console.log('response', response?.data);
+      const response = await getRequest(`${backendUrl}/api/order/get`, { headers: { token } });
+      console.log('Order List', response?.data);
       if (response?.data?.data) {
-        // setOrderList(response?.data?.data);
+        setOrderList(response?.data?.data);
       }
 
     } catch (error) {
-      console.log('error', error);
+      console.log('getOrders Error', error);
     }
   }
 
-  console.log('orderList', orderList);
 
 
   return (
@@ -59,8 +59,7 @@ const Orders = () => {
                   <p className='sm:text-base font-medium'>{item?.order_no}</p>
                 </div>
                 <div>
-                  {/* <p className='sm:text-base font-medium'>Order ID: {item?.order_no}</p> */}
-                  <div className='flex gap-1 flex-col text-base text-gray-700'>
+                  <div className='flex gap-1 flex-col text-base text-gray-700 w-52'>
                     <p>Total: {currency}{item?.cartAmount}</p>
                     <p>Quantity: {totalQuntity}</p>
                     <p>Size: {sizes}</p>
@@ -70,30 +69,32 @@ const Orders = () => {
                   </div>
                 </div>
               </div>
-              <div className='flex justify-between md:w-8/12 items-center'>
-
-                <div className='flex flex-col item-center w-48'>
-                  {
-                    item?.cartData?.map((element, index) => {
-                      const totalPrice = Number(element?.quantity) * Number(element.products.price);
-                      if (index === item?.cartData?.lenth - 1) {
-                        return <p key={index}> {`${++index}) Name: ${element?.products?.name} (Size: ${element?.size}) Price: ${element?.quantity} * ${element?.products?.price} = ${totalPrice}`} </p>
-                      } else {
-                        return <p key={index}>{`${++index}) Name: ${element?.products?.name} (Size: ${element?.size})  Price: ${element?.quantity} * ${element?.products?.price} = ${totalPrice}`} </p>
-                      }
+              <div className='flex flex-col items-start' >
+                {
+                  item?.cartData?.map((element, index) => {
+                    const totalPrice = Number(element?.quantity) * Number(element.products.price);
+                    if (index === item?.cartData?.lenth - 1) {
+                      return <p key={index}> {`${++index}) Name: ${element?.products?.name} (Size: ${element?.size}) Price: ${element?.quantity} * ${element?.products?.price} = ${totalPrice}`} </p>
+                    } else {
+                      return <p key={index}>{`${++index}) Name: ${element?.products?.name} (Size: ${element?.size})  Price: ${element?.quantity} * ${element?.products?.price} = ${totalPrice}`} </p>
                     }
-                    )
                   }
-                </div>
-
-                <div className='flex items-center gap-2'>
-                  <p className='min-w-2 h-2 rounded-full bg-green-500'></p>
-                  <p className='text-sm md:text-base'> {item?.status === 'ORDER_PLACED' ? 'Ready to Ship' : 'Product Delivered'}</p>
-                </div>
-
-                <button className='border h-12 px-2 rounded-lg text-base font-medium'>Track Order</button>
-
+                  )
+                }
               </div>
+              <div className='flex flex-col items-start'>
+                <p>Name: {item?.address?.first_name} {item?.address?.last_name}</p>
+                <p>Email: {item?.address?.email}</p>
+                <p>Contact: {item?.address?.contact}</p>
+                <p>Address: {item?.address?.street}, {item?.address?.city}, {item?.address?.state}, {item?.address?.country}, {item?.address?.pincode}. </p>
+              </div>
+              <div className='flex items-center gap-2'>
+                <p className={`min-w-2 h-2 rounded-full ${item?.status === 'ORDER_CANCELLED' ? 'bg-red-500' : 'bg-green-500'}`}></p>
+                <p className='text-sm md:text-base'>
+                  {item.status.split('_').join(' ')}
+                </p>
+              </div>
+
             </div>
           })
         }
