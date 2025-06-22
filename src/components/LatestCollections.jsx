@@ -12,7 +12,7 @@ const LatestCollections = () => {
   const [latestProducts, setLatestProducts] = useState([]);
 
   useEffect(() => {
-    setLatestProducts(products.slice(0, 10));
+    setLatestProducts(products?.slice(0, 10));
   }, [products]);
 
   return (
@@ -27,7 +27,7 @@ const LatestCollections = () => {
       </div>
       <div className="grid grid-cols-2 sm:grid-col-3 md:grid-cols-4 lg:grid-cols-5 gap-4 gap-y-6">
         {
-          latestProducts.map((product, index)=> {
+          latestProducts?.map((product, index)=> {
             return <ProductItem key={index} name={product.name} id={product._id} image={product.image} price={product.price} ></ProductItem>
           })
         }
